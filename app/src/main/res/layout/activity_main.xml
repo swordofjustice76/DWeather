@@ -13,7 +13,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:paddingLeft="20sp"
-        android:paddingTop="10sp"
+        android:paddingTop="5sp"
         android:paddingRight="20sp">
 
 
@@ -23,7 +23,7 @@
             android:layout_height="175sp"
             android:layout_centerHorizontal="true"
             android:adjustViewBounds="true"
-            android:padding="10sp"
+            android:padding="5sp"
             android:scaleType="centerInside"
             android:src="@drawable/sun" />
 
@@ -39,13 +39,24 @@
             android:textSize="72sp" />
 
         <TextView
+            android:id="@+id/feelsLikeTempTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:text="Feels Like: --°"
+            android:fontFamily="@font/comfortaabold"
+            android:textColor="@color/colourBlack"
+            android:layout_below="@id/currentTemperatureTxt"
+            android:paddingBottom="5sp"/>
+
+        <TextView
             android:id="@+id/locationTxt"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_below="@+id/currentTemperatureTxt"
+            android:layout_below="@+id/feelsLikeTempTextView"
             android:layout_centerHorizontal="true"
             android:fontFamily="@font/comfortaabold"
-            android:paddingBottom="10sp"
+            android:paddingBottom="5sp"
             android:text="Brisbane, QLD"
             android:textColor="@color/colourBlack"
             android:textSize="18sp" />
@@ -66,7 +77,7 @@
             android:layout_height="wrap_content"
             android:layout_above="@+id/scrollView"
             android:layout_centerHorizontal="true"
-            android:layout_marginBottom="25sp"
+            android:layout_marginBottom="10sp"
             android:background="@drawable/main_info_background">
 
             <TableRow
@@ -104,21 +115,18 @@
 
                 <ImageView
                     android:id="@+id/currentWindBearingImageView"
-                    android:layout_width="50sp"
-                    android:layout_height="50sp"
-                    android:padding="5sp"
+                    android:layout_width="30sp"
+                    android:layout_height="30sp"
                     android:src="@drawable/wind" />
 
                 <ImageView
-                    android:layout_width="50sp"
-                    android:layout_height="50sp"
-                    android:padding="5sp"
+                    android:layout_width="30sp"
+                    android:layout_height="30sp"
                     android:src="@drawable/humidity" />
 
                 <ImageView
-                    android:layout_width="50sp"
-                    android:layout_height="50sp"
-                    android:padding="5sp"
+                    android:layout_width="30sp"
+                    android:layout_height="30sp"
                     android:src="@drawable/drop" />
 
             </TableRow>
@@ -446,6 +454,8 @@
 
 
         </HorizontalScrollView>
+
+
 
 
     </RelativeLayout>

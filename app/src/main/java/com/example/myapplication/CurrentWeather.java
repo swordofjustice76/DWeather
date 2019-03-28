@@ -1,20 +1,35 @@
 package com.example.myapplication;
 
+import android.Manifest;
+import android.app.Dialog;
+import android.content.DialogInterface;
+import android.content.IntentSender;
+import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResponse;
+import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
 import org.json.JSONArray;
@@ -38,6 +53,7 @@ import okhttp3.Response;
 public class CurrentWeather extends AppCompatActivity {
 
     private static final String TAG = "CurrentWeather";
+    private static final int REQUEST_CHECK_SETTINGS = 1;
 
     String summary;
     TextView mSummary;
@@ -45,6 +61,9 @@ public class CurrentWeather extends AppCompatActivity {
 
     int temperature;
     TextView mTemp;
+
+    double apparentTemperature;
+    TextView mFeelsLikeTemp;
 
     int apparentTemp;
     TextView mApparentTemp;
@@ -121,8 +140,6 @@ public class CurrentWeather extends AppCompatActivity {
     TextView mTwelfthHourTimeTextView;
 
 
-    private String mIcon;
-
     private FusedLocationProviderClient mFusedLocationProviderClient;
 
     Location currentLocation;
@@ -130,6 +147,7 @@ public class CurrentWeather extends AppCompatActivity {
     LocationCallback locationCallback;
 
     double latitude;
+    double longitude;
     TextView mLatitude;
 
     private static final int MY_PERMISSION_REQUEST_FINE_LOCATION = 101;
@@ -139,12 +157,114 @@ public class CurrentWeather extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
+        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 
         //getLocation();
+        //checkLocationSettings();
+        requestLocationPermission();
         initialiseView();
-        gatherInfo();
+        //gatherInfo();
 
+
+    }
+
+    private void checkLocationSettings() {
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
+
+
+        SettingsClient client = LocationServices.getSettingsClient(this);
+        Task<LocationSettingsResponse> task = client.checkLocationSettings(builder.build());
+
+
+        task.addOnSuccessListener(this, new OnSuccessListener<LocationSettingsResponse>() {
+            @Override
+            public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
+                // All location settings are satisfied. The client can initialize
+                // location requests here.
+                //getLocation();
+                requestLocationPermission();
+            }
+        });
+
+        task.addOnFailureListener(this, new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                if (e instanceof ResolvableApiException) {
+                    // Location settings are not satisfied, but this can be fixed
+                    // by showing the user a dialog.
+                    try {
+                        // Show the dialog by calling startResolutionForResult(),
+                        // and check the result in onActivityResult().
+                        ResolvableApiException resolvable = (ResolvableApiException) e;
+                        resolvable.startResolutionForResult(CurrentWeather.this,
+                                REQUEST_CHECK_SETTINGS);
+                    } catch (IntentSender.SendIntentException sendEx) {
+                        // Ignore the error.
+                    }
+                }
+            }
+        });
+
+
+    }
+
+    private void requestLocationPermission() {
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+        new AlertDialog.Builder(this)
+                .setTitle("Permission needed")
+                .setMessage("Location permissions are needed to find the weather for your location")
+                .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        ActivityCompat.requestPermissions(CurrentWeather.this, new String[] {Manifest.permission.ACCESS_FINE_LOCATION}, MY_PERMISSION_REQUEST_FINE_LOCATION);
+                    }
+                })
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                })
+                .create().show();
+        } else {
+            ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.ACCESS_FINE_LOCATION}, MY_PERMISSION_REQUEST_FINE_LOCATION);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (requestCode == MY_PERMISSION_REQUEST_FINE_LOCATION){
+            if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                Toast.makeText(this, "Permission Granted", Toast.LENGTH_SHORT).show();
+                getLocation();
+            } else {
+                Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void getLocation() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        mFusedLocationProviderClient.getLastLocation()
+                .addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        // Got last known location. In some rare situations this can be null.
+
+                        if (location != null) {
+                            // Logic to handle location object
+                            latitude = location.getLatitude();
+                            longitude = location.getLongitude();
+                            gatherInfo();
+
+                        } else {
+                            Toast.makeText(CurrentWeather.this, "LOCATION FUCKED", Toast.LENGTH_LONG).show();
+                        }
+                    }
+                });
 
     }
 
@@ -165,6 +285,7 @@ public class CurrentWeather extends AppCompatActivity {
         mCurrentVisibility = findViewById(R.id.currentVisibilityOutput);
         mCurrentCloudCover = findViewById(R.id.currentCloudCoverOutput);
         mSummary = findViewById(R.id.summary);
+        mFeelsLikeTemp = findViewById(R.id.feelsLikeTempTextView);
 
         mFirstHourTempOutput = findViewById(R.id.firstHourTemperatureOutput);
         mSecondHourTempOutput = findViewById(R.id.secondHourTemperatureOutput);
@@ -209,41 +330,11 @@ public class CurrentWeather extends AppCompatActivity {
     }
 
 
-    private void getLocation() {
-        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
-
-        try {
-            Task location = mFusedLocationProviderClient.getLastLocation();
-            location.addOnCompleteListener(new OnCompleteListener() {
-                @Override
-                public void onComplete(@NonNull Task task) {
-                    if (task.isSuccessful()) {
-                        Log.d(TAG, "onComplete: Found location");
-                        currentLocation = (Location) task.getResult();
-                        Log.d(TAG, "updateLocation: Latitude: " + currentLocation);
-                        //updateLocation();
-
-
-                    }
-
-                }
-            });
-
-        } catch (SecurityException e) {
-            Log.e(TAG, "getLocation: " + e.getMessage());
-        }
-    }
-
-    private void updateLocation() {
-        Log.d(TAG, "updateLocation: Latitude: " + currentLocation);
-    }
-
-
     private void gatherInfo() {
 
         OkHttpClient client = new OkHttpClient();
 
-        String url = "  https://api.darksky.net/forecast/1934e1a58c7f8b7ce7441684cccaf5bd/-27.45113485317587,153.04351949888286";
+        String url = "  https://api.darksky.net/forecast/1934e1a58c7f8b7ce7441684cccaf5bd/" + latitude + "," + longitude;
 
         final Request request = new Request.Builder().
                 url(url)
@@ -266,6 +357,7 @@ public class CurrentWeather extends AppCompatActivity {
                             setSummary();
                             setCurrentIcon();
                             setTemp();
+                            //setFeelsLikeTemp();
                             // setApparentTemp();
                             setLocation();
                             // setHighTemp();
@@ -285,7 +377,7 @@ public class CurrentWeather extends AppCompatActivity {
                             setUVIndex();
                             setVisibility();
                             setCloudCover();
-
+                            Toast.makeText(CurrentWeather.this, "URL: " + url, Toast.LENGTH_LONG).show();
 
                         }
                     });
@@ -296,18 +388,16 @@ public class CurrentWeather extends AppCompatActivity {
 
     }
 
-
-public void setFormattedTime(){
-
+    public void setFormattedTime() {
 
 
-}
+    }
 
     private void setSummary() {
         JSONObject currentInfoObject = null;
         try {
             currentInfoObject = new JSONObject(currentWeatherData);
-            JSONObject currentObject = currentInfoObject.getJSONObject("currently");
+            JSONObject currentObject = currentInfoObject.getJSONObject("hourly");
             summary = currentObject.getString("summary");
 
             mSummary.setText(summary);
@@ -686,12 +776,13 @@ public void setFormattedTime(){
         try {
             currentInfoObject = new JSONObject(currentWeatherData);
             JSONObject currentObject = currentInfoObject.getJSONObject("currently");
-            double currentCloudCover = currentObject.getInt("cloudCover");
+            double currentCloudCover = currentObject.getDouble("cloudCover");
 
             Log.i(TAG, "setCloudCover: " + currentCloudCover);
 
-            currentCloudCover *= 100;
+            currentCloudCover = currentCloudCover * 100;
             mCurrentCloudCover.setText("Cloud Cover: " + Math.round(currentCloudCover) + "%");
+            Log.i(TAG, "setCloudCover: " + currentCloudCover);
 
         } catch (JSONException e) {
             e.printStackTrace();
@@ -777,23 +868,6 @@ public void setFormattedTime(){
         }
     }
 
-    private void setApparentTemp() {
-        JSONObject currentInfoObject = null;
-        try {
-            currentInfoObject = new JSONObject(currentWeatherData);
-            JSONObject currentObject = currentInfoObject.getJSONObject("currently");
-            apparentTemp = currentObject.getInt("apparentTemperature");
-
-            //converting to Celcius
-            apparentTemp = (apparentTemp - 32) * 5 / 9;
-
-            mApparentTemp.setText("Feels like " + apparentTemp + "°C");
-
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
 
     private void setWindSpeed() {
         JSONObject currentInfoObject = null;
@@ -812,7 +886,6 @@ public void setFormattedTime(){
         }
     }
 
-    //NOT WORKING PROPERLY
     private void setChanceOfRain() {
         JSONObject currentInfoObject = null;
         try {
@@ -823,13 +896,17 @@ public void setFormattedTime(){
             for (int i = 0; i < dataArray.length(); i++) {
                 JSONObject dataArrayJSONObject = dataArray.getJSONObject(i);
 
-                double chanceOfRainJSON = dataArrayJSONObject.getDouble("precipProbability");
+                if (i == 0) {
+                    double chanceOfRainJSON = dataArrayJSONObject.getDouble("precipProbability");
 
-                chanceOfRain = chanceOfRainJSON;
-                //converting to %
-                chanceOfRain = (chanceOfRain * 100);
+                    chanceOfRain = chanceOfRainJSON;
+                    //converting to %
+                    chanceOfRain = (chanceOfRain * 100);
 
-                mChanceOfRain.setText(Math.round(chanceOfRain) + "%");
+                    mChanceOfRain.setText(Math.round(chanceOfRain) + "%");
+                }
+
+
             }
 
         } catch (JSONException e) {
@@ -843,11 +920,15 @@ public void setFormattedTime(){
             currentInfoObject = new JSONObject(currentWeatherData);
             JSONObject currentObject = currentInfoObject.getJSONObject("currently");
             temperature = currentObject.getInt("temperature");
+            apparentTemperature = currentObject.getDouble("apparentTemperature");
+
 
             //converting to Celcius
             temperature = (temperature - 32) * 5 / 9;
+            apparentTemperature = (apparentTemperature - 32) * 5 / 9;
 
             mTemp.setText(temperature + "°C");
+            mFeelsLikeTemp.setText("Feels Like: " + Math.round(apparentTemperature) + "°C");
 
         } catch (JSONException e) {
             e.printStackTrace();
