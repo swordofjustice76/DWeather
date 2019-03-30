@@ -9,7 +9,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.example.myapplication"
+        applicationId 'com.damoproductions.dweather'
         minSdkVersion 20
         targetSdkVersion 28
         versionCode 1

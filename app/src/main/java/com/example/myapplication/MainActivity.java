@@ -2,30 +2,20 @@ package com.example.myapplication;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
 import android.support.design.widget.BottomSheetBehavior;
-import android.support.design.widget.BottomSheetDialog;
-import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 
 import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -47,7 +37,7 @@ public TextView mCurrentTemp;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.splash_screen);
 
-        mLocation = (TextView) findViewById(R.id.locationTxt);
+        mLocation = (TextView) findViewById(R.id.locationTextView);
         mCurrentTemp = (TextView) findViewById(R.id.currentTemperatureTxt);
         //mCurrentTime = (TextView) findViewById(R.id.currentTimeTxt);
 

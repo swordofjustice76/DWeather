@@ -1,15 +1,17 @@
 package com.example.myapplication;
 
 import android.Manifest;
-import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
-import android.graphics.drawable.Drawable;
+import android.graphics.Color;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.CoordinatorLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
@@ -27,7 +29,6 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResponse;
 import com.google.android.gms.location.SettingsClient;
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
@@ -37,10 +38,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 import java.util.TimeZone;
 
 import okhttp3.Call;
@@ -68,7 +69,6 @@ public class CurrentWeather extends AppCompatActivity {
     int apparentTemp;
     TextView mApparentTemp;
 
-    String location;
     TextView mLocation;
 
     int highTemp;
@@ -148,93 +148,55 @@ public class CurrentWeather extends AppCompatActivity {
 
     double latitude;
     double longitude;
-    TextView mLatitude;
 
     private static final int MY_PERMISSION_REQUEST_FINE_LOCATION = 101;
+
+    CoordinatorLayout mainLayout;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mainLayout = (CoordinatorLayout)findViewById(R.id.mainActivity);
 
         mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 
         //getLocation();
-        //checkLocationSettings();
-        requestLocationPermission();
+        //requestLocationPermission();
         initialiseView();
-        //gatherInfo();
-
-
-    }
-
-    private void checkLocationSettings() {
-        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
-
-
-        SettingsClient client = LocationServices.getSettingsClient(this);
-        Task<LocationSettingsResponse> task = client.checkLocationSettings(builder.build());
-
-
-        task.addOnSuccessListener(this, new OnSuccessListener<LocationSettingsResponse>() {
-            @Override
-            public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
-                // All location settings are satisfied. The client can initialize
-                // location requests here.
-                //getLocation();
-                requestLocationPermission();
-            }
-        });
-
-        task.addOnFailureListener(this, new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                if (e instanceof ResolvableApiException) {
-                    // Location settings are not satisfied, but this can be fixed
-                    // by showing the user a dialog.
-                    try {
-                        // Show the dialog by calling startResolutionForResult(),
-                        // and check the result in onActivityResult().
-                        ResolvableApiException resolvable = (ResolvableApiException) e;
-                        resolvable.startResolutionForResult(CurrentWeather.this,
-                                REQUEST_CHECK_SETTINGS);
-                    } catch (IntentSender.SendIntentException sendEx) {
-                        // Ignore the error.
-                    }
-                }
-            }
-        });
-
+        gatherInfo();
 
     }
+
+
 
     private void requestLocationPermission() {
         if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
-        new AlertDialog.Builder(this)
-                .setTitle("Permission needed")
-                .setMessage("Location permissions are needed to find the weather for your location")
-                .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        ActivityCompat.requestPermissions(CurrentWeather.this, new String[] {Manifest.permission.ACCESS_FINE_LOCATION}, MY_PERMISSION_REQUEST_FINE_LOCATION);
-                    }
-                })
-                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                })
-                .create().show();
+            new AlertDialog.Builder(this)
+                    .setTitle("Permission needed")
+                    .setMessage("Location permissions are needed to find the weather for your location")
+                    .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            ActivityCompat.requestPermissions(CurrentWeather.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, MY_PERMISSION_REQUEST_FINE_LOCATION);
+                        }
+                    })
+                    .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                        }
+                    })
+                    .create().show();
         } else {
-            ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.ACCESS_FINE_LOCATION}, MY_PERMISSION_REQUEST_FINE_LOCATION);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, MY_PERMISSION_REQUEST_FINE_LOCATION);
         }
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if (requestCode == MY_PERMISSION_REQUEST_FINE_LOCATION){
-            if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+        if (requestCode == MY_PERMISSION_REQUEST_FINE_LOCATION) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 Toast.makeText(this, "Permission Granted", Toast.LENGTH_SHORT).show();
                 getLocation();
             } else {
@@ -273,7 +235,7 @@ public class CurrentWeather extends AppCompatActivity {
 
         mTemp = findViewById(R.id.currentTemperatureTxt);
         //mApparentTemp = findViewById(R.id.apparentTemp);
-        mLocation = findViewById(R.id.locationTxt);
+        mLocation = findViewById(R.id.locationTextView);
         // mHighTemp = findViewById(R.id.highTempOutput);
         // mLowTemp = findViewById(R.id.lowTempOutput);
         mChanceOfRain = findViewById(R.id.chanceOfRainOutput);
@@ -326,15 +288,16 @@ public class CurrentWeather extends AppCompatActivity {
         mEleventhHourTimeTextView = findViewById(R.id.eleventhHourTimeTextView);
         mTwelfthHourTimeTextView = findViewById(R.id.twelfthHourTimeTextView);
 
-        // mLatitude = findViewById(R.id.latitude);
     }
-
 
     private void gatherInfo() {
 
         OkHttpClient client = new OkHttpClient();
 
-        String url = "  https://api.darksky.net/forecast/1934e1a58c7f8b7ce7441684cccaf5bd/" + latitude + "," + longitude;
+        latitude = -27.4476;
+        longitude = 153.0457;
+
+        String url = "  https://api.darksky.net/forecast/1934e1a58c7f8b7ce7441684cccaf5bd/"+ latitude + "," + longitude;
 
         final Request request = new Request.Builder().
                 url(url)
@@ -366,7 +329,6 @@ public class CurrentWeather extends AppCompatActivity {
 
                             setHourlyTemperatureInfo();
 
-                            setFormattedTime();
 
                             setHumidity();
                             setWindSpeed();
@@ -377,7 +339,7 @@ public class CurrentWeather extends AppCompatActivity {
                             setUVIndex();
                             setVisibility();
                             setCloudCover();
-                            Toast.makeText(CurrentWeather.this, "URL: " + url, Toast.LENGTH_LONG).show();
+                            //Toast.makeText(CurrentWeather.this, "URL: " + url, Toast.LENGTH_LONG).show();
 
                         }
                     });
@@ -388,19 +350,23 @@ public class CurrentWeather extends AppCompatActivity {
 
     }
 
-    public void setFormattedTime() {
-
-
-    }
-
     private void setSummary() {
         JSONObject currentInfoObject = null;
         try {
             currentInfoObject = new JSONObject(currentWeatherData);
-            JSONObject currentObject = currentInfoObject.getJSONObject("hourly");
-            summary = currentObject.getString("summary");
+            JSONObject currentObject = currentInfoObject.getJSONObject("daily");
+            JSONArray currentObjectArray = currentObject.getJSONArray("data");
 
-            mSummary.setText(summary);
+            for (int i = 0; i < 2; i++) {
+                JSONObject dataArrayJSONObject = currentObjectArray.getJSONObject(i);
+
+                if (i == 0) {
+                    String summary = dataArrayJSONObject.getString("summary");
+
+                    mSummary.setText(summary);
+                }
+            }
+
 
         } catch (JSONException e) {
             e.printStackTrace();
@@ -417,12 +383,15 @@ public class CurrentWeather extends AppCompatActivity {
 
             if (icon.equals("partly-cloudy-day")) {
                 mCurrentIconImageView.setImageResource(R.drawable.partly_cloudy_day);
+                mainLayout.setBackgroundColor(ContextCompat.getColor(this, R.color.colourOvercast));
             } else if (icon.equals("clear-day")) {
                 mCurrentIconImageView.setImageResource(R.drawable.sun);
+
             } else if (icon.equals("partly_cloudy_day")) {
                 mCurrentIconImageView.setImageResource(R.drawable.overcast);
             } else if (icon.equals("rain")) {
                 mCurrentIconImageView.setImageResource(R.drawable.raining);
+                mainLayout.setBackgroundColor(ContextCompat.getColor(this, R.color.colourRain));
             } else if (icon.equals("clear-night")) {
                 mCurrentIconImageView.setImageResource(R.drawable.moon);
             }
@@ -868,7 +837,6 @@ public class CurrentWeather extends AppCompatActivity {
         }
     }
 
-
     private void setWindSpeed() {
         JSONObject currentInfoObject = null;
         try {
@@ -890,24 +858,18 @@ public class CurrentWeather extends AppCompatActivity {
         JSONObject currentInfoObject = null;
         try {
             currentInfoObject = new JSONObject(currentWeatherData);
-            JSONObject currentObject = currentInfoObject.getJSONObject("daily");
-            JSONArray dataArray = currentObject.getJSONArray("data");
-
-            for (int i = 0; i < dataArray.length(); i++) {
-                JSONObject dataArrayJSONObject = dataArray.getJSONObject(i);
-
-                if (i == 0) {
-                    double chanceOfRainJSON = dataArrayJSONObject.getDouble("precipProbability");
-
-                    chanceOfRain = chanceOfRainJSON;
-                    //converting to %
-                    chanceOfRain = (chanceOfRain * 100);
-
-                    mChanceOfRain.setText(Math.round(chanceOfRain) + "%");
-                }
+            JSONObject currentObject = currentInfoObject.getJSONObject("currently");
 
 
-            }
+            double chanceOfRainJSON = currentObject.getDouble("precipProbability");
+
+            chanceOfRain = chanceOfRainJSON;
+            //converting to %
+            chanceOfRain = (chanceOfRain * 100);
+
+            mChanceOfRain.setText(Math.round(chanceOfRain) + "%");
+            Log.i(TAG, "setChanceOfRain: " + chanceOfRain);
+
 
         } catch (JSONException e) {
             e.printStackTrace();
@@ -987,13 +949,23 @@ public class CurrentWeather extends AppCompatActivity {
     }
 
     private void setLocation() {
-        JSONObject currentInfoObject = null;
-        try {
-            currentInfoObject = new JSONObject(currentWeatherData);
-            location = currentInfoObject.getString("timezone");
-            mLocation.setText(location);
+        Geocoder geocoder;
+        List<Address> addresses;
+        geocoder = new Geocoder(this, Locale.getDefault());
 
-        } catch (JSONException e) {
+
+        try {
+            addresses = geocoder.getFromLocation(latitude, longitude, 1); // Here 1 represent max location result to returned, by documents it recommended 1 to 5
+            String address = addresses.get(0).getAddressLine(0); // If any additional address line present than only, check with max available address lines by getMaxAddressLineIndex()
+            String city = addresses.get(0).getLocality();
+            String state = addresses.get(0).getAdminArea();
+            String country = addresses.get(0).getCountryName();
+            String postalCode = addresses.get(0).getPostalCode();
+            String knownName = addresses.get(0).getFeatureName(); // Only if available else return NULL
+
+            mLocation.setText(city);
+
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

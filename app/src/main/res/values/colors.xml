@@ -6,6 +6,14 @@
     <color name="colourBlack">#000000</color>
     <color name="colourSunnyBackground">#1bcfff</color>
     <color name="colourWhite">#FFFFFF</color>
-    <color name="colourSplashScreen">#ffd500</color>
+
+    <color name="colourSplashScreen">#ffba08</color>
+    <color name="colourSunny">#ffba08</color>
+    <color name="colourRain">#1b4079</color>
+    <color name="colourOvercast">#627c85</color>
+    <color name="colourStorm">#364652</color>
+
+
+
     <color name="colourTransparent">#00ffd500</color>
 </resources>
