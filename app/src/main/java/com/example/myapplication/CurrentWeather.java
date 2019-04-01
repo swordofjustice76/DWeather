@@ -2,21 +2,27 @@ package com.example.myapplication;
 
 import android.Manifest;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.util.Xml;
+import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -139,12 +145,10 @@ public class CurrentWeather extends AppCompatActivity {
     TextView mEleventhHourTimeTextView;
     TextView mTwelfthHourTimeTextView;
 
+    Button infoPanelButton;
 
     private FusedLocationProviderClient mFusedLocationProviderClient;
 
-    Location currentLocation;
-    LocationRequest locationRequest;
-    LocationCallback locationCallback;
 
     double latitude;
     double longitude;
@@ -153,11 +157,16 @@ public class CurrentWeather extends AppCompatActivity {
 
     CoordinatorLayout mainLayout;
 
+
+
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mainLayout = (CoordinatorLayout)findViewById(R.id.mainActivity);
+        mainLayout = findViewById(R.id.mainActivity);
+
+
 
         mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 
@@ -165,6 +174,8 @@ public class CurrentWeather extends AppCompatActivity {
         //requestLocationPermission();
         initialiseView();
         gatherInfo();
+
+
 
     }
 
@@ -236,8 +247,8 @@ public class CurrentWeather extends AppCompatActivity {
         mTemp = findViewById(R.id.currentTemperatureTxt);
         //mApparentTemp = findViewById(R.id.apparentTemp);
         mLocation = findViewById(R.id.locationTextView);
-        // mHighTemp = findViewById(R.id.highTempOutput);
-        // mLowTemp = findViewById(R.id.lowTempOutput);
+        mHighTemp = findViewById(R.id.highTempOutput);
+        mLowTemp = findViewById(R.id.lowTempOutput);
         mChanceOfRain = findViewById(R.id.chanceOfRainOutput);
         mCurrentHumidity = findViewById(R.id.humidityOutput);
         mCurrentWindSpeed = findViewById(R.id.windspeedOutput);
@@ -288,6 +299,8 @@ public class CurrentWeather extends AppCompatActivity {
         mEleventhHourTimeTextView = findViewById(R.id.eleventhHourTimeTextView);
         mTwelfthHourTimeTextView = findViewById(R.id.twelfthHourTimeTextView);
 
+        infoPanelButton = findViewById(R.id.infoPanelBtn);
+        infoButtonInitialisation();
     }
 
     private void gatherInfo() {
@@ -323,8 +336,8 @@ public class CurrentWeather extends AppCompatActivity {
                             //setFeelsLikeTemp();
                             // setApparentTemp();
                             setLocation();
-                            // setHighTemp();
-                            // setLowTemp();
+                            setHighTemp();
+                            setLowTemp();
                             setChanceOfRain();
 
                             setHourlyTemperatureInfo();
@@ -339,7 +352,7 @@ public class CurrentWeather extends AppCompatActivity {
                             setUVIndex();
                             setVisibility();
                             setCloudCover();
-                            //Toast.makeText(CurrentWeather.this, "URL: " + url, Toast.LENGTH_LONG).show();
+
 
                         }
                     });
@@ -372,7 +385,7 @@ public class CurrentWeather extends AppCompatActivity {
             e.printStackTrace();
         }
     }
-
+    //HAVE TO ADD MORE ICONS
     private void setCurrentIcon() {
         JSONObject currentInfoObject = null;
         try {
@@ -383,20 +396,31 @@ public class CurrentWeather extends AppCompatActivity {
 
             if (icon.equals("partly-cloudy-day")) {
                 mCurrentIconImageView.setImageResource(R.drawable.partly_cloudy_day);
-                mainLayout.setBackgroundColor(ContextCompat.getColor(this, R.color.colourOvercast));
+                mainLayout.setBackgroundColor(ContextCompat.getColor(this, R.color.colourSunny));
+
+
             } else if (icon.equals("clear-day")) {
                 mCurrentIconImageView.setImageResource(R.drawable.sun);
+                mainLayout.setBackgroundColor(ContextCompat.getColor(this, R.color.colourSunny));
 
             } else if (icon.equals("partly_cloudy_day")) {
                 mCurrentIconImageView.setImageResource(R.drawable.overcast);
+
             } else if (icon.equals("rain")) {
                 mCurrentIconImageView.setImageResource(R.drawable.raining);
                 mainLayout.setBackgroundColor(ContextCompat.getColor(this, R.color.colourRain));
+
             } else if (icon.equals("clear-night")) {
                 mCurrentIconImageView.setImageResource(R.drawable.moon);
+
+            } else if (icon.equals("cloudy")) {
+                mCurrentIconImageView.setImageResource(R.drawable.overcast);
+                mainLayout.setBackgroundColor(ContextCompat.getColor(this, R.color.colourOvercast));
+
+
             }
 
-            //HAVE TO ADD MORE ICONS
+
 
 
         } catch (JSONException e) {
@@ -904,18 +928,24 @@ public class CurrentWeather extends AppCompatActivity {
             currentInfoObject = new JSONObject(currentWeatherData);
             JSONObject currentObject = currentInfoObject.getJSONObject("daily");
             JSONArray dataArray = currentObject.getJSONArray("data");
-
+           
             for (int i = 0; i < dataArray.length(); i++) {
                 JSONObject dataArrayJSONObject = dataArray.getJSONObject(i);
+                
+                int minTemp = dataArrayJSONObject.getInt("temperatureLow");
+                
+                if (i==0){
+                    lowTemp = minTemp;
+                    //converting to Celcius
+                    lowTemp = (lowTemp - 32) * 5 / 9;
 
-                int minTemp = dataArrayJSONObject.getInt("temperatureMin");
-                //Log.d(TAG, "setHighTemp: FUCK YEAH");
+                    mLowTemp.setText("Low: " + lowTemp + "°↓");
 
-                lowTemp = minTemp;
-                //converting to Celcius
-                lowTemp = (lowTemp - 32) * 5 / 9;
+                }
+                
 
-                mLowTemp.setText(lowTemp + "°↓");
+
+                
             }
 
         } catch (JSONException e) {
@@ -932,15 +962,17 @@ public class CurrentWeather extends AppCompatActivity {
 
             for (int i = 0; i < dataArray.length(); i++) {
                 JSONObject dataArrayJSONObject = dataArray.getJSONObject(i);
+                int maxTemp = dataArrayJSONObject.getInt("temperatureHigh");
 
-                int maxTemp = dataArrayJSONObject.getInt("temperatureMax");
-                Log.d(TAG, "setHighTemp: FUCK YEAH");
+                if(i == 0) {
+                    highTemp = maxTemp;
+                    //converting to Celcius
+                    highTemp = (highTemp - 32) * 5 / 9;
 
-                highTemp = maxTemp;
-                //converting to Celcius
-                highTemp = (highTemp - 32) * 5 / 9;
+                    mHighTemp.setText("High: "+highTemp + "°↑");
+                }
 
-                mHighTemp.setText(highTemp + "°↑");
+
             }
 
         } catch (JSONException e) {
@@ -987,5 +1019,14 @@ public class CurrentWeather extends AppCompatActivity {
         }
     }
 
+    private void infoButtonInitialisation(){
+        infoPanelButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(CurrentWeather.this, InfoPanel.class);
+                startActivity(intent);
+            }
+        });
+    }
 
 }

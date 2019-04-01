@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/infoPanelDesign"
+    android:padding="10dp"
+    android:layout_centerInParent="true"
+    android:background="@drawable/info_panel_design"
+    android:clipToPadding="true"
+    >
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="22sp"
+        android:text="Welcome to DWeather"
+        android:id="@+id/welcomeInfoText"
+        android:textColor="@color/colourBlack"
+        android:fontFamily="@font/comfortaabold"
+        android:textStyle="bold"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:paddingBottom="10dp"
+        />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/welcomeInfoText"
+        android:textColor="@color/colourBlack"
+        android:fontFamily="@font/comfortaabold"
+        android:textAlignment="center"
+        android:text="@string/welcome_text_info_view"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Powered by DarkSky"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"/>
+
+</RelativeLayout>

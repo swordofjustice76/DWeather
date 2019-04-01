@@ -1,8 +1,13 @@
 <resources>
-    <string name="app_name">My Application</string>
+    <string name="app_name">DWeather</string>
     <string name="bottom_sheet_option_camera">Use Camera</string>
     <string name="bottom_sheet_option_gallery">Upload from Gallery</string>
     <string name="bottom_sheet_option_heading">Add Photo</string>
     <string name="bottom_sheet_option_remove_photo">Remove Photo</string>
     <string name="dark_sky_key">6dd5a2d57e9fcc5db2668ca96ff9b267</string>
+
+
+    <string name="welcome_text_info_view">Hi, and welcome to DWeather. An independently managed weather app designed to give you the information you need right in front of you. I aim on giving you the best user experience possible. If you have any ideas on how I can improve my app, please email me at damoproductionsandroid@gmail.com. Thank you so much for trying out my app. :)</string>
+
+
 </resources>
